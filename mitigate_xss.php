@@ -2,7 +2,7 @@
 
 class output_sanitize extends sanitize
 {
-		/*
+		/* 
 		 * Function: sanitize_attribute [Protected]
 		 * 
 		 * Description: sanatizes the string based on the needs of an atrributes, built for the usage -> attr="CLEANED_STRING_GOES_HERE"
