@@ -69,7 +69,25 @@ class output_sanitize extends sanitize
 				// Return cleaned string
 				return $this->get();
 			}
-			
+		
+		
+		/* 
+		 * Function: sanitize_data [Protected]
+		 * 
+		 * Description: sanatizes the string based on the needs of an data or inner html, built for the usage -> <tag>CLEANED_STRING_GOES_HERE</tag>
+		 * 
+		 * Input:
+		 * 
+		 * Output:
+		 * 		None
+		 * 
+		 * Global:
+		 * 		Uses class global $toclean
+		 * 
+		 * Usage:
+		 * 		$cleaned_string = $class->sanitize_data($unclean_string, $options_array);
+		 * 
+		 */	
 		public function sanitize_data($data, array $options = array())
 			{
 				
