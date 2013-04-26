@@ -262,6 +262,227 @@ class sanitize
 			$this->decode_html_entities();
 		}
 	
+	
+	
+	// Basic Functions: These functions are the basis for other functions
+	
+		
+	/*
+	 * Function: replace_chars [Protected]
+	 * 
+	 * Description: Replaces characters designated in $chars from the string being cleaned to their replacement also designated in chars
+	 * 
+	 * Input:
+	 * 		$chars (array) - Characters to remove from string
+	 * 			Format: array( "CHAR_TO_REPLACE" => "REPLACEMENT CHAR")
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->replace_chars($chars_to_remove_array, $options_array);
+	 */	
+	protected function replace_chars(array $chars = array(), array $options = array())
+		{
+			// Loop through each character in the $char array
+			foreach ($chars as $char=>$replace)
+				{ 
+					// Check if the array item is actually character
+					if (ctype_graph($char)&&strlen($char)==1)
+						{
+							// Replace the character
+							$this->toclean = str_ireplace($char,$replace,$this->toclean);
+						}else{
+							// Die if character is invalid
+							die("Invalid chars input!");
+						}
+				}
+		}
+	
+		/*
+	 * Function: replace_strings [Protected]
+	 * 
+	 * Description: Replaces string. 
+	 * 
+	 * Input:
+	 * 		$strings (array) - Substrings to remove from string
+	 * 			Format: array( "STRING_TO_REPLACE" => "REPLACEMENT STRING")
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->replace_strings($strings_to_replace_array, $options_array);
+	 */	
+	protected function replace_strings(array $strings = array(), array $options = array())
+		{
+			// Loop through each string in $strings array
+			foreach ($strings as $string=>$replace)
+				{
+					// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
+					
+					// Get current value of string to be cleaned
+					$before = $this->toclean;
+					
+					// Setup after string
+					$after = '';
+					
+					// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues
+					while ($before != $after)
+						{
+							// Get current value of string ot be cleaned
+							$before = $this->toclean;
+							
+							// Remove all currently known instances of substring from string to be cleaned
+							$this->toclean = str_ireplace($string,$replace,$this->toclean);
+							
+							// Set new value of string to be compared
+							$after = $this->toclean;
+							
+						}
+					
+				}
+		}
+		
+		
+	/*
+	 * Function: replace_string_regex [Protected]
+	 * 
+	 * Description: Does a preg_replace on string and replaces matched to pattern with inputed replacement string (PHP preg style). 
+	 * 
+	 * Input:
+	 * 		$regex_string (string) - regex string to match substrings to replace in string to be cleaned
+	 * 		$replace - string to replace matches to the pattern with
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_string_regex($regex_string, $options_array);
+	 */	
+	protected function replace_string_regex($regex_string, $replace, array $options = array())
+		{
+			// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
+			
+			// Get current value of string to be cleaned
+			$before = $this->toclean;
+			
+			// Setup after string
+			$after = '';
+			
+			// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues
+			while ($before != $after)
+				{
+					// Get current value of string to be cleaned
+					$before = $this->toclean;
+					
+					// Remove all currently known instances of regex string from string to be cleaned (make it case insensitive)
+					$this->toclean = preg_replace($regex_string . "i", $replace, $this->toclean);
+					
+					// Set new value of string to be compared
+					$after = $this->toclean;
+					
+				}
+						
+			
+		}
+	
+	
+	
+	/*
+	 * Function: remove_chars [Protected]
+	 * 
+	 * Description: Removes characters designated in $chars from the string being cleaned 
+	 * 
+	 * Input:
+	 * 		$chars (array) - Characters to remove from string
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_chars($chars_to_remove_array, $options_array);
+	 */	
+	protected function remove_chars(array $chars = array(), array $options = array())
+		{
+			// Turn the current array into keys and set all values to "" so we make the format "VALUE"=>"", 
+			// This, in the replace_chars function, will replace "VALUE" with ""
+			$remove_array = array_fill_keys($chars,"");
+			
+			$this->replace_chars($remove_array,$options);
+		}
+	
+	
+	/*
+	 * Function: remove_strings [Protected]
+	 * 
+	 * Description: Like remove_chars, but removes strings designated in $strings instead. 
+	 * 
+	 * Input:
+	 * 		$strings (array) - Substrings to remove from string
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_strings($strings_to_remove_array, $options_array);
+	 */	
+	protected function remove_strings(array $strings = array(), array $options = array())
+		{
+			// Turn the current array into keys and set all values to "" so we make the format "VALUE"=>"", 
+			// This, in the replace_chars function, will replace "VALUE" with ""
+			$remove_array = array_fill_keys($strings,"");
+			
+			$this->replace_strings($remove_array,$options);
+		}
+	
+	/*
+	 * Function: remove_string_regex [Protected]
+	 * 
+	 * Description: Like remove_strings, but removes string based on regex string inputed (PHP preg style). 
+	 * 
+	 * Input:
+	 * 		$regex_string (string) - regex string to match substrings to remove from string to be cleaned
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_string_regex($regex_string, $options_array);
+	 */	
+	protected function remove_string_regex($regex_string,array $options = array())
+		{
+			$this->replace_string_regex($regex_string, "", $options);
+		}
+	
+	// End Basic Functions
+	
+	
+	
 	/*
 	 * Function: remove_quotes [Protected]
 	 * 
@@ -286,21 +507,18 @@ class sanitize
 				{
 					
 					// Remove malformed quotes (three quotes in a row)
-					 
-					$this->toclean = str_replace("'''","",$this->toclean);
-					$this->toclean = str_replace("\"\"\"","",$this->toclean); 
 					
+					$this->remove_strings("'''",'"""');
+									
 					// Remove all quotes if the number of quotes is not even (means injection)
 					
-					if ((substr_count($this->toclean,"\"")%2)!=0||(substr_count($this->toclean,"'")%2)!=0)
-						{
-							$this->toclean = str_replace("'","",$this->toclean);
-							$this->toclean = str_replace("\"","",$this->toclean);
-						}
+						if ((substr_count($this->toclean,"\"")%2)!=0||(substr_count($this->toclean,"'")%2)!=0)
+							{
+								$this->remove_strings(array("'",'"'));
+							}
 					
 				}else{
-					$this->toclean = str_replace("'","",$this->toclean);
-					$this->toclean = str_replace("\"","",$this->toclean);
+					$this->remove_strings(array("'",'"'));
 				}
 			
 			
@@ -327,134 +545,6 @@ class sanitize
 		{
 			$this->toclean = strip_tags($this->toclean);
 		}
-	
-	/*
-	 * Function: remove_chars [Protected]
-	 * 
-	 * Description: Removes characters designated in $chars from the string being cleaned 
-	 * 
-	 * Input:
-	 * 		$chars (array) - Characters to remove from string
-	 * 		$options (array) - options for removing (currently not implemented)
-	 * 
-	 * Output:
-	 * 		None
-	 * 
-	 * Global:
-	 * 		Uses class global $toclean
-	 * 
-	 * Usage:
-	 * 		$this->remove_chars($chars_to_remove_array, $options_array);
-	 */	
-	protected function remove_chars(array $chars = array(), array $options = array())
-		{
-			// Loop through each character in the $char array
-			foreach ($chars as $char)
-				{ 
-					// Check if the array item is actually character
-					if (ctype_graph($char)&&strlen($char)==1)
-						{
-							// Replace the character
-							$this->toclean = str_ireplace($char,"",$this->toclean);
-						}else{
-							// Die if character is invalid
-							die("Invalid chars input!");
-						}
-				}
-		}
-	
-	/*
-	 * Function: remove_strings [Protected]
-	 * 
-	 * Description: Like remove_chars, but removes strings designated in $strings instead. 
-	 * 
-	 * Input:
-	 * 		$strings (array) - Substrings to remove from string
-	 * 		$options (array) - options for removing (currently not implemented)
-	 * 
-	 * Output:
-	 * 		None
-	 * 
-	 * Global:
-	 * 		Uses class global $toclean
-	 * 
-	 * Usage:
-	 * 		$this->remove_strings($strings_to_remove_array, $options_array);
-	 */	
-	protected function remove_strings(array $strings = array(), array $options = array())
-		{
-			// Loop through each string in $strings array
-			foreach ($strings as $string)
-				{
-					// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
-					
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
-					
-					// Setup after string
-					$after = '';
-					
-					// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues
-					while ($before != $after)
-						{
-							// Get current value of string ot be cleaned
-							$before = $this->toclean;
-							
-							// Remove all currently known instances of substring from string to be cleaned
-							$this->toclean = str_ireplace($string,"",$this->toclean);
-							
-							// Set new value of string to be compared
-							$after = $this->toclean;
-							
-						}
-					
-				}
-		}
-		
-	/*
-	 * Function: remove_string_regex [Protected]
-	 * 
-	 * Description: Like remove_strings, but removes string based on regex string inputed (PHP preg style). 
-	 * 
-	 * Input:
-	 * 		$regex_string (string) - regex string to match substrings to remove from string to be cleaned
-	 * 		$options (array) - options for removing (currently not implemented)
-	 * 
-	 * Output:
-	 * 		None
-	 * 
-	 * Global:
-	 * 		Uses class global $toclean
-	 * 
-	 * Usage:
-	 * 		$this->remove_string_regex($regex_string, $options_array);
-	 */	
-	protected function remove_string_regex($regex_string,array $options = array())
-		{
-			// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
-			
-			// Get current value of string to be cleaned
-			$before = $this->toclean;
-			
-			// Setup after string
-			$after = '';
-			
-			// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues
-			while ($before != $after)
-				{
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
-					
-					// Remove all currently known instances of regex string from string to be cleaned
-					$this->toclean = preg_replace($regex_string, '', $this->toclean);
-					
-					// Set new value of string to be compared
-					$after = $this->toclean;
-					
-				}
-						
-			
-		}
 
 	/*
 	 * Function: remove_javascript_tags [Protected]
@@ -475,7 +565,7 @@ class sanitize
 	 */	
 	protected function remove_javascript_tags(array $options = array())
 		{			
-			$pattern = '#<script>(.+?)</script>#i';
+			$pattern = '#<script>(.+?)</script>#';
 			$this->remove_string_regex($pattern); 
 			
 			// Remove any stray tags
@@ -497,6 +587,7 @@ class sanitize
 	 * 
 	 * Global:
 	 * 		Uses class global $toclean
+	 * 		Calls class functions remove_string_regex and remove_strings
 	 * 
 	 * Usage:
 	 * 		$this->remove_javascript_attributes($options_array);
@@ -504,51 +595,17 @@ class sanitize
 	protected function remove_javascript_attributes(array $options = array())
 		{
 			
-			$this->remove_string_regex('#on[a-z ]+=[ ]*\"(.+?)\"#i'); 
-			$this->remove_string_regex('#on[a-z ]+=[ ]*(.+?)[ ]#i'); 
+			// Format on<action>="<code>", does account for spaces around = sign
+			$this->remove_string_regex('#on[a-z ]+=[ ]*\"(.+?)\"#'); 
 			
+			//Format on<action>=<code><space>. does account for spaces around = sign
+			$this->remove_string_regex('#on[a-z ]+=[ ]*(.+?)[ ]#'); 
 			
-			// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
+			// Backup in case of failure in previous, just removes on<action>=, does account for spaces before = sign
+			$this->remove_string_regex("#on[a-z ]+=#");
 			
-			// Get current value of string to be cleaned
-			$before = $this->toclean;
-			
-			// Setup after string
-			$after = '';
-			
-			// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues	
-			while ($before != $after)
-				{
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
-					
-					// Format on<action>="<code>", does account for spaces around = sign
-					// Setup regex pattern
-					$pattern = '#on[a-z ]+=[ ]*\"(.+?)\"#i';
-					// Remove matches to regex string
-					$this->toclean = preg_replace($pattern, '', $this->toclean);
-					
-					//Format on<action>=<code><space>. does account for spaces around = sign
-					// Setup regex pattern
-					$pattern = '#on[a-z ]+=[ ]*(.+?)[ ]#i';
-					// Remove matches to regex string
-					$this->toclean = preg_replace($pattern, '', $this->toclean);
-					
-					// Backup in case of failure in previous, just removes on<action>=, does account for spaces before = sign
-					$this->toclean = preg_replace("#on[a-z ]+=#i", '', $this->toclean);
-					
-					// Also remove javascript in the form "javascript:"
-					$this->toclean = str_ireplace("javascript:","",$this->toclean);
-					
-					// Remove other javascript stuff
-					$this->toclean = str_ireplace("FSCommand","",$this->toclean);
-					$this->toclean = str_ireplace("seekSegmentTime","",$this->toclean);
-					
-					
-					// Set new value of string to be compared
-					$after = $this->toclean;
-					
-				}
+			// Remove other javascript stuff
+			$this->remove_strings(array("javascript:","FSCommand","seekSegmentTime"));
 			
 		}
 	
@@ -571,12 +628,11 @@ class sanitize
 	 */	
 	protected function remove_meta_tags(array $options = array())
 		{			
-			$pattern = '#<meta(.+?)>#i';
-			$this->toclean = preg_replace($pattern, '', $this->toclean);
+			$pattern = '#<meta(.+?)>#';
+			$this->remove_string_regex($pattern); 
 			
-			// Backup for incomlete tags
-			$this->toclean = str_ireplace("<meta","",$this->toclean);
-
+			// Remove any stray tags
+			$this->remove_strings(array("<meta"));
 		}
 
 	/*
@@ -598,54 +654,19 @@ class sanitize
 	 */	
 	protected function remove_frame_tags (array $options = array())
 		{			
+			// Remove Iframe tags
+			$this->remove_string_regex('#<iframe(.+?)>#'); 
 			
-			
-			$before = $this->toclean;
-					
-			// Setup after string
-			$after = '';
-			
-			// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues	
-			
-			while ($before!=$after)
-				{
-					
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
-					
-					// Remove Iframe tags
-					$pattern = '#<iframe(.+?)>#i';
-					$this->toclean = preg_replace($pattern, '', $this->toclean);
-					
-					// Backup for incomlete tags
-					$this->toclean = str_ireplace("<iframe","",$this->toclean);
-					
-					// Remove frameset tags
-					$pattern = '#<frameset(.+?)>#i';
-					$this->toclean = preg_replace($pattern, '', $this->toclean);
-					
-					// Backup for incomlete tags
-					$this->toclean = str_ireplace("<frameset","",$this->toclean);
-					
-					// Remove frame tags
-					$pattern = '#<frame(.+?)>#i';
-					$this->toclean = preg_replace($pattern, '', $this->toclean);								
+			// Remove frameset tags
+			$this->remove_string_regex('#<frameset(.+?)>#');
 
-					// Backup for incomlete tags
-					$this->toclean = str_ireplace("<frame","",$this->toclean);
+			// Remove frame tags
+			$this->remove_string_regex('#<frame(.+?)>#');
 
-					// Set new value of string to be compared
-					$after = $this->toclean;
-					
-				}
-			
-			
-			
-			
-			
-			
+			// Remove any stray tags
+			$this->remove_strings(array("<frame","<frameset","<iframe"));
+
 		}
-	//
 	
 	/*
 	 * Function: lower_case [Protected]
@@ -758,30 +779,9 @@ class sanitize
 		{
 			if (preg_match('/([\\&]*)#([XxUu]{0,1})([0]*)([0-9a-fA-F]{2})/ei',$this->toclean))
 				{
-					// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
-			
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
 					
-					// Setup after string
-					$after = '';
+					$this->replace_string_regex("/([\\&]*)#([XxUu]{0,1})([0]*)([0-9a-fA-F]{2})/e",'chr(hexdec(\'$4\'))');
 					
-					// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues	
-					
-					while ($before!=$after)
-						{
-							
-							// Get current value of string to be cleaned
-							$before = $this->toclean;
-							
-							// Convert all hex codes to actual values
-							$this->toclean = preg_replace('/([\\&]*)#([XxUu]{0,1})([0]*)([0-9a-fA-F]{2})/ei', 'chr(hexdec(\'$4\'))', $this->toclean);
-																
-
-							// Set new value of string to be compared
-							$after = $this->toclean;
-							
-						}
 				}
 			
 		
@@ -810,29 +810,9 @@ class sanitize
 		{
 			if (preg_match('/([\\&]*)#([0]*)([0-9a-fA-F]{2,3})/ei',$this->toclean))
 				{
-					// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
-			
-					// Get current value of string to be cleaned
-					$before = $this->toclean;
+					// Replace dec values with ASCII counterparts
+					$this->replace_string_regex('/([\\&]*)#([0]*)([0-9a-fA-F]{2,3})/e','chr(\'$3\')');
 					
-					// Setup after string
-					$after = '';
-					
-					// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues	
-					while ($before!=$after)
-						{
-							
-							// Get current value of string to be cleaned
-							$before = $this->toclean;
-							
-							// Convert all hex codes to actual values
-							$this->toclean = preg_replace('/([\\&]*)#([0]*)([0-9a-fA-F]{2,3})/ei', 'chr(\'$3\')', $this->toclean);
-																
-
-							// Set new value of string to be compared
-							$after = $this->toclean;
-							
-						}
 				}
 		}
 		
