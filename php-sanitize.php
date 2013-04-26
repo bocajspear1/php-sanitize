@@ -429,7 +429,7 @@ class sanitize
 	 * Usage:
 	 * 		$this->remove_string_regex($regex_string, $options_array);
 	 */	
-	protected function remove_string_regex(string $regex_string,array $options = array())
+	protected function remove_string_regex($regex_string,array $options = array())
 		{
 			// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
 			
@@ -476,12 +476,11 @@ class sanitize
 	protected function remove_javascript_tags(array $options = array())
 		{			
 			$pattern = '#<script>(.+?)</script>#i';
-			$this->toclean = preg_replace($pattern, '', $this->toclean);
+			$this->remove_string_regex($pattern); 
 			
-
+			// Remove any stray tags
+			$this->remove_strings(array("<script>","</script>"));
 			
-			$this->toclean = str_ireplace("<script>","",$this->toclean);
-			$this->toclean = str_ireplace("</script>","",$this->toclean);
 			
 		}
 	
@@ -504,6 +503,10 @@ class sanitize
 	 */	
 	protected function remove_javascript_attributes(array $options = array())
 		{
+			
+			$this->remove_string_regex('#on[a-z ]+=[ ]*\"(.+?)\"#i'); 
+			$this->remove_string_regex('#on[a-z ]+=[ ]*(.+?)[ ]#i'); 
+			
 			
 			// Following code used to make sure all instances are removed, even if using a trick like ffoooo (foo inside foo)
 			
