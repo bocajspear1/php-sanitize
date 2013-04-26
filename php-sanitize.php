@@ -60,12 +60,12 @@ class output_sanitize extends sanitize
 				$chars_to_remove = array("=","\\","`",";","?", "*", "^", '$', "/", ",");
 				
 				// If there are characters that the user also wants removed, add them to the remove array
-				if (in_array("remove_chars",$options))
+				if (array_key_exists("remove_chars",$options))
 					{
 						$chars_to_remove = array_merge($chars_to_remove,$options['remove_chars']);
 					}
 
-				if (in_array("allowed_chars",$options))
+				if (array_key_exists("allowed_chars",$options))
 					{
 						$this->filter_remove_chars($chars_to_remove,$options["allowed_chars"]);
 					}else{
@@ -92,7 +92,7 @@ class output_sanitize extends sanitize
 		/* 
 		 * Function: sanitize_data [Protected]
 		 * 
-		 * Description: sanatizes the string based on the needs of an data or inner html, built for the usage -> <tag>CLEANED_STRING_GOES_HERE</tag>
+		 * Description: sanitizes the string based on the needs of an data or inner html, built for the usage -> <tag>CLEANED_STRING_GOES_HERE</tag> within <body>
 		 * 
 		 * Input:
 		 * 
@@ -108,7 +108,18 @@ class output_sanitize extends sanitize
 		 */	
 		public function sanitize_data($data, array $options = array())
 			{
+				// Exempt <code> and <pre> from rigourous filtering, but give them special filtering
 				
+				
+				// Remove meta tags
+				$this->remove_meta_tags();
+				
+				// Remove iframe tags
+				$this->remove_frame_tags();
+				
+				// Remove all javscript, tags and attributes
+				$this->remove_javascript_attributes();
+				$this->remove_javascript_tags();
 			}
 		
 		/* 
@@ -164,12 +175,12 @@ class output_sanitize extends sanitize
 				$chars_to_remove = array("`","!", "$", "^", '*', '|', '\\', ";", ",");
 				
 				// If there are characters that the user also wants removed, add them to the remove array
-				if (in_array("remove_chars",$options))
+				if (array_key_exists("remove_chars",$options))
 					{
 						$chars_to_remove = array_merge($chars_to_remove,$options['remove_chars']);
 					}
 				
-				if (in_array("allowed_chars",$options))
+				if (array_key_exists("allowed_chars",$options))
 					{
 						$this->filter_remove_chars($chars_to_remove,$options["allowed_chars"]);
 					}else{
@@ -530,7 +541,8 @@ class sanitize
 	 * Description: Removes all html tags from the string being cleaned.
 	 * 
 	 * Input:
-	 * 		$options (array) - options for removing (currently not implemented)
+	 * 		$options (array) - options for removing\
+	 * 			allowed_tags  - String of allowed tags
 	 * 
 	 * Output:
 	 * 		None
@@ -543,7 +555,13 @@ class sanitize
 	 */	
 	protected function remove_html_tags(array $options = array())
 		{
-			$this->toclean = strip_tags($this->toclean);
+			if (array_key_exists("allowed_tags",$options))
+				{
+					$this->toclean = strip_tags($this->toclean,$options['allowed_tags']);
+				}else{
+					$this->toclean = strip_tags($this->toclean);
+				}
+			
 		}
 
 	/*
