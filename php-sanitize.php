@@ -9,14 +9,18 @@ class output_sanitize extends sanitize
 		 * 		No HTML tags
 		 * 		No style attributes in the attribute
 		 * 		No quotes (by default)
+		 * 		No Meta tags
 		 * 		No javascript
 		 * 		No brackets and parenthesis (by default)
+		 * 		Characters Removed: =\`;?*^$/,
 		 * 
 		 * Input:
 		 * 		$data (string) - String to be cleaned by the class
 		 * 		$options (array) - options for function
 		 * 			- quotes_on : if set, quotes are not removed
 		 *  		- brackets_on : if set, brackets and parenthesises are not removed
+		 * 			- allow_chars (array) : characters in array are not removed
+		 * 			- remove_chars (array) : characters in array are removed alongside the defaults
 		 * 
 		 * Output:
 		 * 		None
@@ -52,8 +56,22 @@ class output_sanitize extends sanitize
 						$this->remove_quotes(array());
 					}
 				
-				// Remove equal signs, backslashes, backticks, semicolons, colons, question marks, aterisks, carots, dollar signs and forward slashes
-				$this->remove_chars(array("=","\\","`",";",":", "?", "*", "^", '$', "/"));
+				// Remove equal signs, backslashes, backticks, semicolons, question marks, aterisks, carots, dollar signs, forward slashes and commas
+				$chars_to_remove = array("=","\\","`",";","?", "*", "^", '$', "/", ",");
+				
+				// If there are characters that the user also wants removed, add them to the remove array
+				if (in_array("remove_chars",$options))
+					{
+						$chars_to_remove = array_merge($chars_to_remove,$options['remove_chars']);
+					}
+
+				if (in_array("allowed_chars",$options))
+					{
+						$this->filter_remove_chars($chars_to_remove,$options["allowed_chars"]);
+					}else{
+						$this->filter_remove_chars($chars_to_remove);
+					}	
+				
 				
 				// Remove all HTML tags
 				$this->remove_html_tags();
@@ -92,15 +110,111 @@ class output_sanitize extends sanitize
 			{
 				
 			}
-			
-		public function santitize_link($data, array $options = array())
+		
+		/* 
+		 * Function: sanitize_link [Protected]
+		 * 
+		 * Description: sanatizes the string based on the needs of a link, built for the usage -> <a href="CLEANED_STRING_GOES_HERE"></a>
+		 * 		No HTML tags
+		 * 		Np frame tags
+		 * 		No quotes (by default)
+		 * 		No javascript
+		 * 		No brackets and parenthesis (by default)
+		 * 
+		 * Input:
+		 * 		$data (string) - String to be cleaned by the class
+		 * 		$options (array) - options for function
+		 * 			- quotes_on : if set, quotes are not removed
+		 *  		- brackets_on : if set, brackets and parenthesises are not removed
+		 * 			- allow_chars (array) : characters in array are not removed
+		 * 			- remove_chars (array) : characters in array are removed alongside the defaults
+		 * 
+		 * Output:
+		 * 		None
+		 * 
+		 * Global:
+		 * 		Uses class global $toclean
+		 * 
+		 * Usage:
+		 * 		$cleaned_string = $class->sanitize_link($unclean_string, $options_array);
+		 * 
+		 */
+		public function sanitize_link($data, array $options = array())
 			{
+				// Init sanitize script
+				$this->init($data);
+
+				// Remove meta tags
+				$this->remove_meta_tags();
 				
+				// Remove iframe tags
+				$this->remove_frame_tags();
+				
+				// Remove all javscript, tags and attributes
+				$this->remove_javascript_attributes();
+				$this->remove_javascript_tags();
+				
+				// Remove all quotes
+				$this->remove_quotes(array());
+				
+				// Needed symbols % - : ? & # / . ~ = + @ _
+				// Semi-needed symbols ; , (){}[]
+				// Remove backticks, exclamation points, dollar signs, carots, asterisks, pipe, backslashes, semicolons and commas
+				
+				$chars_to_remove = array("`","!", "$", "^", '*', '|', '\\', ";", ",");
+				
+				// If there are characters that the user also wants removed, add them to the remove array
+				if (in_array("remove_chars",$options))
+					{
+						$chars_to_remove = array_merge($chars_to_remove,$options['remove_chars']);
+					}
+				
+				if (in_array("allowed_chars",$options))
+					{
+						$this->filter_remove_chars($chars_to_remove,$options["allowed_chars"]);
+					}else{
+						$this->filter_remove_chars($chars_to_remove);
+					}	
+
+				
+				// Remove all HTML tags
+				$this->remove_html_tags();
+				
+				// If 'brackets_on' is not set, remove brackets and parenthesis
+				if (!in_array('brackets_on',$options))
+					{
+						$this->remove_chars(array("{","}","[","]","(",")","<",">"));
+					}
+					
+				
+				// Return cleaned string
+				return $this->get();
 			}
 			
 		public function santitize_javascript($data,array $options = array())
 			{
 				
+			} 
+
+
+		private function filter_remove_chars(array $remove,array $notremove = array())
+			{
+				// Loop through all values in array of 'allow_char' to get all characters to not remove
+				foreach ($notremove as $allowed)
+					{
+						foreach ($remove as $id=>$check)
+							{
+								// If a character in not-to-remove array is found in removing array, delete value from removing array
+								if ($allowed == $check)
+									{
+										unset($remove[$id]);
+									}
+							}
+					}
+					
+				
+				// Remove characters given in array
+				$this->remove_chars($remove);
 			}
 }
 /*
@@ -142,10 +256,10 @@ class sanitize
 			$this->decode_hex();
 
 			// Make sure all values have been decoded from url format
-			$input = urldecode($input);
+			$this->decode_url();
 			
 			// Turn all HTML special characters into their real values for analysis
-			$input = html_entity_decode($input);
+			$this->decode_html_entities();
 		}
 	
 	/*
@@ -364,9 +478,11 @@ class sanitize
 			$pattern = '#<script>(.+?)</script>#i';
 			$this->toclean = preg_replace($pattern, '', $this->toclean);
 			
-			// Remove any stray tags
+
+			
 			$this->toclean = str_ireplace("<script>","",$this->toclean);
 			$this->toclean = str_ireplace("</script>","",$this->toclean);
+			
 		}
 	
 	/*
@@ -572,6 +688,30 @@ class sanitize
 			$this->toclean = html_entity_decode($this->toclean);
 		}
 
+
+	/*
+	 * Function: decode_url [Protected]
+	 * 
+	 * Description: Changes all url encoded character valuesto the real characters. 
+	 * 
+	 * Input:
+	 * 		None
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->decode_html_entities();
+	 */	
+	protected function decode_url()
+		{
+			$this->toclean = urldecode($this->toclean);
+			
+		}
+
 	/*
 	 * Function: decode_html_entities [Protected]
 	 * 
@@ -676,7 +816,6 @@ class sanitize
 					$after = '';
 					
 					// Check to see if the strings are the same, after the first run, if the string does not change, all instances are removed and the function continues	
-					
 					while ($before!=$after)
 						{
 							
