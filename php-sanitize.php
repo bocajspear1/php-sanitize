@@ -1,5 +1,8 @@
 <?php
 
+
+
+
 class output_sanitize extends sanitize
 {
 		/* 
@@ -34,6 +37,7 @@ class output_sanitize extends sanitize
 		 */
 		public function sanitize_attribute($data, array $options = array())
 			{
+				
 				// Init sanitize script
 				$this->init($data);
 				
@@ -45,6 +49,13 @@ class output_sanitize extends sanitize
 				
 				// Remove iframe tags
 				$this->remove_frame_tags();
+				
+				// Remove object and embed tags
+				$this->remove_object_tags();
+				$this->remove_embed_tags();
+				
+				//Remove base tags
+				$this->remove_base_tags();
 				
 				// Remove all javscript, tags and attributes
 				$this->remove_javascript_attributes();
@@ -108,7 +119,12 @@ class output_sanitize extends sanitize
 		 */	
 		public function sanitize_data($data, array $options = array())
 			{
-				// Exempt <code> and <pre> from rigourous filtering, but give them special filtering
+				// Exempt <code>, <pre> and other tags given by user from rigourous filtering, but give them special code filtering
+				
+				$low_santize = array("code","pre");
+				
+				$inner_sanitize = $this->clean_substring($data , $this->self_parent());
+				echo $inner_sanitize->self_parent();
 				
 				
 				// Remove meta tags
@@ -120,6 +136,13 @@ class output_sanitize extends sanitize
 				// Remove all javscript, tags and attributes
 				$this->remove_javascript_attributes();
 				$this->remove_javascript_tags();
+			}
+		
+		
+		public function sanitize_code($data,  array $options = array())
+			{
+				// Set all special characters to all html entities
+				
 			}
 		
 		/* 
@@ -563,7 +586,97 @@ class sanitize
 				}
 			
 		}
+	
 
+	
+	/*
+	 * Function: remove_object_tags [Protected]
+	 * 
+	 * Description: Directly removes all <object> tags. 
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_object_tags($options_array);
+	 */	
+	protected function remove_object_tags(array $options = array())
+		{			
+			$pattern = '#<object(.+?)>(.+?)</object>#';
+			$this->remove_string_regex($pattern); 
+			
+			$pattern = '#<object(.+?)>#';
+			$this->remove_string_regex($pattern);
+			
+			// Remove any stray tags
+			$this->remove_strings(array("<object>","</object>"));
+			
+			
+		}
+
+
+	/*
+	 * Function: remove_embed_tags [Protected]
+	 * 
+	 * Description: Directly removes all <embed> tags. 
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_embed_tags($options_array);
+	 */	
+	protected function remove_embed_tags(array $options = array())
+		{			
+			$pattern = '#<embed(.+?)>#';
+			$this->remove_string_regex($pattern); 
+			
+			// Remove any stray tags
+			$this->remove_strings(array("<embed","/embed>"));
+			
+			
+		}
+		
+	/*
+	 * Function: remove_base_tags [Protected]
+	 * 
+	 * Description: Directly removes all <base> tags. 
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing (currently not implemented)
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_base_tags($options_array);
+	 */	
+	protected function remove_base_tags(array $options = array())
+		{			
+			$pattern = '#<base(.+?)>#';
+			$this->remove_string_regex($pattern); 
+			
+			// Remove any stray tags
+			$this->remove_strings(array("<base"));
+			
+			
+		}
+		
 	/*
 	 * Function: remove_javascript_tags [Protected]
 	 * 
@@ -598,7 +711,7 @@ class sanitize
 	 * Description: Removes all javascript attributes of the form on[something] (e.g. onmouseover). 
 	 * 
 	 * Input:
-	 * 		$options (array) - options for removing (currently not implemented)
+	 * 		$options (array) - options or removing (currently not implemented)
 	 * 
 	 * Output:
 	 * 		None
@@ -685,6 +798,85 @@ class sanitize
 			$this->remove_strings(array("<frame","<frameset","<iframe"));
 
 		}
+	
+	
+	
+	/*
+	 * Function: remove_directory_traversal [Protected]
+	 * 
+	 * Description: Removes ../ and ./ from string
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing\
+	 * 			allowed_tags  - String of allowed tags
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_html_tags($options_array);
+	 */	
+	protected function remove_directory_traversal(array $options = array())
+		{
+		
+			$this->remove_strings(array("../","./"));
+			
+		}
+	
+	
+	/*
+	 * Function: remove_php [Protected]
+	 * 
+	 * Description: 
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_html_tags($options_array);
+	 */	
+	protected function remove_php(array $options = array())
+		{
+		
+			
+			
+		}
+	
+	
+	/*
+	 * Function: clean_src_attributes [Protected]
+	 * 
+	 * Description: 
+	 * 
+	 * Input:
+	 * 		$options (array) - options for removing
+	 * 
+	 * Output:
+	 * 		None
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$this->remove_html_tags($options_array);
+	 */	
+	protected function clean_src_attributes(array $options = array())
+		{
+		
+			
+			
+		}
+	
+	
 	
 	/*
 	 * Function: lower_case [Protected]
@@ -855,8 +1047,94 @@ class sanitize
 	 */	
 	protected function get()
 		{
-			$this->set_to_html_entities();
+			
 			return $this->toclean;
+		}
+	
+	/*
+	 * Function: clean_substring [Protected] 
+	 * 
+	 * Description: Creates a new class of sanitize or user provided class name, initializes it, and returns it for the sanitizing of substrings
+	 * NOTE: Does check to make sure the loaded class is a child of class sanitize. If not, the function calls 'die'
+	 * 
+	 * Input:
+	 * 		$string - String to initialize the new sanitize or sanitize child class to
+	 * 		$class - Name of class to return 
+	 * 
+	 * Output:
+	 * 		$substr_clean - Sanitize class returned for use for cleaning substrings
+	 * 
+	 * Global:
+	 * 		None
+	 * 
+	 * Usage:
+	 * 		$class_for_substring = $this->clean_substring();
+	 * 
+	 */		
+	protected function clean_substring($string, $class = 'sanitize')
+		{
+			// Check to see if class is a child of sanitize
+			if (is_subclass_of($class,'sanitize')||$class=='sanitize')
+				{
+					$substr_clean = new $class();
+					$substr_clean->init($string);
+					return $substr_clean;
+				}else{
+					die ("Critical Error: Non-sanitize class was attempted to be loaded!");
+				}
+			
+		}
+		
+	/*
+	 * Function: self [Protected] 
+	 * 
+	 * Description: Returns the name of the current class
+	 * 
+	 * Input:
+	 * 		None
+	 * 
+	 * Output:
+	 * 		get_class($this) - The name of the current class
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$cleaned_string = $this->get();
+	 * 
+	 */	
+	protected function self()
+		{
+			return get_class($this);
+		}
+
+	/*
+	 * Function: self_parent [Protected] 
+	 * 
+	 * Description: Calls the name of the class's parent, if the class is sanitize, santize is returned
+	 * 
+	 * Input:
+	 * 		None
+	 * 
+	 * Output:
+	 * 		get_class($this) - The name of the current class's parent
+	 * 
+	 * Global:
+	 * 		Uses class global $toclean
+	 * 
+	 * Usage:
+	 * 		$cleaned_string = $this->get();
+	 * 
+	 */			
+	protected function self_parent()
+		{
+			if ($this->self()!='sanitize')
+				{
+					return get_parent_class($this);
+				}else{
+					return 'sanitize';
+				}
+			
 		}
 }
 	
